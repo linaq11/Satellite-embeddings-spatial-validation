@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Embeddings Under Spatial Validation</title>
-<meta name="description" content="AlphaEarth satellite embeddings against Sentinel-2 for crop mapping in California's San Joaquin Valley, with random and spatial cross-validation.">
+<title>Embeddings on Unseen Labels</title>
+<meta name="description" content="AlphaEarth satellite embeddings against Sentinel-2 for crop mapping in California and France, with labels the model saw and labels it never saw.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
@@ -37,7 +37,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 .toggle button{font:600 12.5px var(--body);color:var(--muted);background:none;border:0;border-radius:999px;padding:6px 12px;cursor:pointer}
 .toggle button[aria-pressed="true"]{background:var(--on);color:var(--gold1);box-shadow:inset 0 0 0 1px var(--on-line)}
 button:focus-visible{outline:2px solid var(--gold1);outline-offset:2px}
-h1{font:800 29px/1.04 var(--display);margin:0;text-wrap:balance}
+h1{font:800 30px/1.04 var(--display);margin:0;text-wrap:balance}
 .sub{color:var(--gold2);font-weight:600;font-size:12.5px;margin-top:6px}
 .lede{color:var(--muted);margin:0}
 .label{font-weight:700;font-size:12.5px;color:var(--faint);margin:0 0 7px}
@@ -48,7 +48,7 @@ h1{font:800 29px/1.04 var(--display);margin:0;text-wrap:balance}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .big{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .big div{border-top:1px solid var(--line);padding-top:8px}
-.big b{display:block;font:800 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.big b{display:block;font:800 36px/1 var(--display);font-variant-numeric:tabular-nums}
 .big span{color:var(--muted);font-size:12.5px}
 .card{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--glass-strong)}
 .card h2{font:700 16px var(--display);margin:0 0 4px}
@@ -64,14 +64,17 @@ th{color:var(--faint);font-weight:600}
 </style>
 </head>
 <body>
-<div id="map" role="img" aria-label="Map of the sample points in the San Joaquin Valley"></div>
+<div id="map" role="img" aria-label="Map of the sample points"></div>
 <div class="ui"><aside class="panel">
   <div class="top">
     <div class="toggle" role="group" aria-label="Language"><button data-lang="en" aria-pressed="true">English</button><button data-lang="es" aria-pressed="false">Español</button></div>
     <div class="toggle" role="group" aria-label="Theme"><button data-th="dark" aria-pressed="true" data-i18n="dark">Dark</button><button data-th="light" aria-pressed="false" data-i18n="light">Light</button></div>
   </div>
   <div><h1 data-i18n="title"></h1><div class="sub" data-i18n="sub"></div></div>
+  <div><p class="label" data-i18n="regL"></p>
+    <div class="chips"><button class="chip" data-p="fr" aria-pressed="true" data-i18n="fr"></button><button class="chip" data-p="ca" aria-pressed="false" data-i18n="ca"></button></div></div>
   <p class="lede" id="lede"></p>
+  <p class="lede" id="note" style="font-size:12.5px;border-left:3px solid var(--emb);padding-left:10px"></p>
   <div><p class="label" data-i18n="valL"></p>
     <div class="chips"><button class="chip" data-v="block20" aria-pressed="true" data-i18n="spatial"></button><button class="chip" data-v="random" aria-pressed="false" data-i18n="random"></button></div></div>
   <div><p class="label" data-i18n="colL"></p>
@@ -86,40 +89,53 @@ th{color:var(--faint);font-weight:600}
 </aside></div>
 <script>
 const T={
- en:{dark:"Dark",light:"Light",title:"Do satellite embeddings survive spatial validation?",sub:"Crop mapping, San Joaquin Valley, California, 2023",
-  lede:"{n} labelled points from the USDA Cropland Data Layer, eight crops, classified with Google's AlphaEarth embeddings and with Sentinel-2 seasonal composites.",
+ en:{dark:"Dark",light:"Light",title:"Satellite embeddings, tested on labels they never saw",sub:"Crop mapping with AlphaEarth and Sentinel-2, 2023",
+  regL:"Region",fr:"France: independent labels",ca:"California: labels seen in training",
+  lede_fr:"{n} parcels in the Beauce from France's 2023 parcel register (farmers' declarations), eight crops.",
+  lede_ca:"{n} points in California's San Joaquin Valley from the USDA Cropland Data Layer 2023, eight crops.",
+  note_fr:"These labels are not among AlphaEarth's training sources, so this is the fair test.",
+  note_ca:"AlphaEarth v2.1 used the Cropland Data Layer as a training target: the embeddings have seen these labels.",
   valL:"Validation",spatial:"Spatial blocks, 20 km",random:"Random 5-fold",colL:"Colour points by",crop:"Crop",fold:"Test fold",
   b1:"AlphaEarth, 10 labels per crop",b2:"Sentinel-2, 10 labels per crop",
   curveT:"Accuracy against number of labels",curveL:"Macro-F1 of a random forest. Solid: {v}. Dashed: the other validation.",
   xL:"Labels per crop",yL:"Macro-F1",emb:"AlphaEarth (64)",s2:"Sentinel-2 (40)",both:"Both (104)",
   inflT:"How much random validation inflates",inflL:"Macro-F1 with random minus spatial validation, all labels, random forest, with a 95% interval over folds.",
   feat:"Features",diff:"Inflation",ci:"95% interval",
-  verdict:"Embeddings lose less when the test area is new: with Sentinel-2 the gap is about three times larger.",
-  credits:'Labels: USDA NASS Cropland Data Layer 2023, confidence of 90 or more. Embeddings: Google AlphaEarth Foundations (Earth Engine). Imagery: Esri World Imagery. <a href="https://github.com/linaq11/satellite-embeddings-spatial-cv">Code, preregistration and results</a>, Lina María Quintero Fonseca.',
+  verdict_fr:"With independent labels the embeddings and Sentinel-2 tie, even with 10 labels per crop, and random validation inflates both only slightly.",
+  verdict_ca:"With labels the embeddings have seen, they lead by 0.25 with 10 labels per crop and lose less under spatial validation than Sentinel-2.",
+  credits:'Labels: Registre Parcellaire Graphique 2023 (IGN, ASP, Licence Ouverte 2.0) and USDA NASS Cropland Data Layer 2023. The AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind (CC BY 4.0). Imagery: Esri World Imagery. <a href="https://github.com/linaq11/satellite-embeddings-spatial-cv">Code, preregistration and results</a>, Lina María Quintero Fonseca.',
   pop:"<b>{c}</b><br>Random fold {r}, spatial fold {s}"},
- es:{dark:"Oscuro",light:"Claro",title:"¿Los embeddings satelitales resisten la validación espacial?",sub:"Mapeo de cultivos, valle de San Joaquín, California, 2023",
-  lede:"{n} puntos etiquetados con el Cropland Data Layer del USDA, ocho cultivos, clasificados con los embeddings AlphaEarth de Google y con compuestos estacionales de Sentinel-2.",
+ es:{dark:"Oscuro",light:"Claro",title:"Embeddings satelitales, a prueba con etiquetas que no vieron",sub:"Mapeo de cultivos con AlphaEarth y Sentinel-2, 2023",
+  regL:"Región",fr:"Francia: etiquetas independientes",ca:"California: etiquetas vistas al entrenar",
+  lede_fr:"{n} parcelas de la Beauce del registro parcelario francés de 2023 (declaraciones de agricultores), ocho cultivos.",
+  lede_ca:"{n} puntos del valle de San Joaquín (California) del Cropland Data Layer 2023 del USDA, ocho cultivos.",
+  note_fr:"Estas etiquetas no están entre las fuentes de entrenamiento de AlphaEarth: es la prueba justa.",
+  note_ca:"AlphaEarth v2.1 usó el Cropland Data Layer como objetivo de entrenamiento: los embeddings ya vieron estas etiquetas.",
   valL:"Validación",spatial:"Bloques espaciales, 20 km",random:"Aleatoria, 5 pliegues",colL:"Colorear puntos por",crop:"Cultivo",fold:"Pliegue de prueba",
   b1:"AlphaEarth, 10 etiquetas por cultivo",b2:"Sentinel-2, 10 etiquetas por cultivo",
   curveT:"Exactitud según el número de etiquetas",curveL:"Macro-F1 de un random forest. Continua: {v}. Punteada: la otra validación.",
   xL:"Etiquetas por cultivo",yL:"Macro-F1",emb:"AlphaEarth (64)",s2:"Sentinel-2 (40)",both:"Ambos (104)",
   inflT:"Cuánto infla la validación aleatoria",inflL:"Macro-F1 con validación aleatoria menos espacial, todas las etiquetas, random forest, con intervalo del 95 % sobre pliegues.",
   feat:"Variables",diff:"Inflación",ci:"Intervalo 95 %",
-  verdict:"Los embeddings pierden menos cuando el área de prueba es nueva: con Sentinel-2 la brecha es unas tres veces mayor.",
-  credits:'Etiquetas: Cropland Data Layer 2023 del USDA NASS, confianza de 90 o más. Embeddings: AlphaEarth Foundations de Google (Earth Engine). Imagen: Esri World Imagery. <a href="https://github.com/linaq11/satellite-embeddings-spatial-cv">Código, preregistro y resultados</a>, Lina María Quintero Fonseca.',
+  verdict_fr:"Con etiquetas independientes, los embeddings y Sentinel-2 empatan, incluso con 10 etiquetas por cultivo, y la validación aleatoria infla poco a ambos.",
+  verdict_ca:"Con etiquetas que ya vieron, los embeddings ganan por 0,25 con 10 etiquetas por cultivo y pierden menos que Sentinel-2 bajo validación espacial.",
+  credits:'Etiquetas: Registre Parcellaire Graphique 2023 (IGN, ASP, Licence Ouverte 2.0) y Cropland Data Layer 2023 del USDA NASS. The AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind (CC BY 4.0). Imagen: Esri World Imagery. <a href="https://github.com/linaq11/satellite-embeddings-spatial-cv">Código, preregistro y resultados</a>, Lina María Quintero Fonseca.',
   pop:"<b>{c}</b><br>Pliegue aleatorio {r}, pliegue espacial {s}"}
 };
-const ES_CROPS={"Almonds":"Almendros","Pistachios":"Pistachos","Grapes":"Uva","Fallow/Idle Cropland":"Barbecho","Citrus":"Cítricos","Tomatoes":"Tomate","Alfalfa":"Alfalfa","Cotton":"Algodón"};
+const NAMES={en:{"Blé tendre d'hiver":"Winter soft wheat","Colza d'hiver":"Winter rapeseed","Orge d'hiver":"Winter barley","Blé dur d'hiver":"Winter durum wheat","Orge de printemps":"Spring barley","Maïs (hors maïs doux)":"Maize","Betterave":"Sugar beet","Pomme de terre":"Potato"},
+ es:{"Almonds":"Almendros","Pistachios":"Pistachos","Grapes":"Uva","Fallow/Idle Cropland":"Barbecho","Citrus":"Cítricos","Tomatoes":"Tomate","Alfalfa":"Alfalfa","Cotton":"Algodón",
+     "Blé tendre d'hiver":"Trigo blando de invierno","Colza d'hiver":"Colza de invierno","Orge d'hiver":"Cebada de invierno","Blé dur d'hiver":"Trigo duro de invierno","Orge de printemps":"Cebada de primavera","Maïs (hors maïs doux)":"Maíz","Betterave":"Remolacha","Pomme de terre":"Papa"}};
 const CROP_COL=["#d9a06a","#a8c85a","#9a6bb0","#c9b79c","#f2a33a","#e0584c","#3fae6a","#6fb7d6"];
 const FOLD_COL=["#e0a23a","#3bb4c4","#e0584c","#9a86d0","#5aae61"];
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-let lang=store.get("emb-lang")||"en", theme=store.get("emb-theme")||"dark", val="block20", col="crop", S, P, B, map;
+let lang=store.get("emb-lang")||"en", theme=store.get("emb-theme")||"dark", val="block20", col="crop", part="fr", S, P, B, map;
+const DATA={};
 document.documentElement.setAttribute("data-theme",theme);
 const t=(k,p={})=>T[lang][k].replace(/\{(\w+)\}/g,(_,x)=>p[x]??"");
 const loc=()=>lang==="es"?"es-CO":"en-US";
 const num=(v,d=2)=>new Intl.NumberFormat(loc(),{minimumFractionDigits:d,maximumFractionDigits:d}).format(v).replace("-","−");
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const crop=i=>lang==="es"?(ES_CROPS[S.classes[i]]||S.classes[i]):S.classes[i];
+const crop=i=>NAMES[lang][S.classes[i]]||S.classes[i];
 
 function render(){
   document.documentElement.lang=lang;
@@ -128,8 +144,10 @@ function render(){
   document.querySelectorAll("[data-th]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.th===theme));
   document.querySelectorAll("[data-v]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===val));
   document.querySelectorAll("[data-c]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c===col));
+  document.querySelectorAll("[data-p]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.p===part));
   if(!S) return;
-  document.getElementById("lede").textContent=t("lede",{n:S.n_points.toLocaleString(loc())});
+  document.getElementById("lede").textContent=t("lede_"+part,{n:S.n_points.toLocaleString(loc())});
+  document.getElementById("note").textContent=t("note_"+part);
   const c=S.curves;
   document.getElementById("big").innerHTML=
     `<div><b style="color:var(--emb)">${num(c[`${val}|rf|A`]["10"][0])}</b><span>${t("b1")}</span></div>`+
@@ -141,8 +159,8 @@ function render(){
   curve();
   const H=S.H2;
   document.getElementById("infl").innerHTML=`<tr><th>${t("feat")}</th><th>${t("diff")}</th><th>${t("ci")}</th></tr>`+
-    [["A","emb"],["B","s2"],["C","both"]].map(([f,k])=>{const h=H[`${f}|rf`];return `<tr><td>${t(k)}</td><td>+${num(h.mean_diff,3)}</td><td>${num(h.ci95_folds[0],3)} – ${num(h.ci95_folds[1],3)}</td></tr>`}).join("");
-  document.getElementById("verdict").textContent=t("verdict");
+    [["A","emb"],["B","s2"],["C","both"]].map(([f,k])=>{const h=H[`${f}|rf`];return `<tr><td>${t(k)}</td><td>${h.mean_diff>=0?"+":""}${num(h.mean_diff,3)}</td><td>${num(h.ci95_folds[0],3)} – ${num(h.ci95_folds[1],3)}</td></tr>`}).join("");
+  document.getElementById("verdict").textContent=t("verdict_"+part);
   document.getElementById("credits").innerHTML=t("credits");
   paint();
 }
@@ -172,18 +190,29 @@ function paint(){
   map.setLayoutProperty("blocks","visibility",val==="block20"?"visible":"none");
   map.setLayoutProperty("blocks-line","visibility",val==="block20"?"visible":"none");
 }
+function geo(){
+  return {blocks:{type:"FeatureCollection",features:B.map(b=>({type:"Feature",properties:{f:b.fold},geometry:{type:"Polygon",coordinates:[b.ring]}}))},
+          pts:{type:"FeatureCollection",features:P.map(p=>({type:"Feature",properties:{v:p},geometry:{type:"Point",coordinates:[p[0],p[1]]}}))}};
+}
+function bounds(){ const lons=P.map(p=>p[0]), lats=P.map(p=>p[1]); return [[Math.min(...lons),Math.min(...lats)],[Math.max(...lons),Math.max(...lats)]]; }
+const PAD=()=>({left:innerWidth>900?440:20,right:30,top:30,bottom:innerWidth>900?30:innerHeight*.55});
+async function load(p){
+  if(!DATA[p]) DATA[p]=await Promise.all(["summary","points","blocks"].map(f=>fetch(`data/${p}/${f}.json`).then(r=>r.json())));
+  [S,P,B]=DATA[p]; part=p; render();
+  if(!map) build();
+  else if(map.getSource("pts")){ const g=geo(); map.getSource("pts").setData(g.pts); map.getSource("blocks").setData(g.blocks); paint(); map.fitBounds(bounds(),{padding:PAD()}); }
+}
 function build(){
-  const lons=P.map(p=>p[0]), lats=P.map(p=>p[1]);
   map=new maplibregl.Map({container:"map",attributionControl:{compact:true},
     style:{version:8,sources:{esri:{type:"raster",tileSize:256,maxzoom:19,tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],attribution:"Imagery: Esri, Maxar, Earthstar Geographics"}},layers:[{id:"esri",type:"raster",source:"esri",paint:{"raster-saturation":-0.35,"raster-brightness-max":0.85}}]},
-    bounds:[[Math.min(...lons),Math.min(...lats)],[Math.max(...lons),Math.max(...lats)]],
-    fitBoundsOptions:{padding:{left:innerWidth>900?440:20,right:30,top:30,bottom:innerWidth>900?30:innerHeight*.55}}});
+    bounds:bounds(), fitBoundsOptions:{padding:PAD()}});
   map.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-right");
   map.once("style.load",()=>{
-    map.addSource("blocks",{type:"geojson",data:{type:"FeatureCollection",features:B.map(b=>({type:"Feature",properties:{f:b.fold},geometry:{type:"Polygon",coordinates:[b.ring]}}))}});
+    const g=geo();
+    map.addSource("blocks",{type:"geojson",data:g.blocks});
     map.addLayer({id:"blocks",type:"fill",source:"blocks",paint:{"fill-color":["match",["get","f"],...FOLD_COL.flatMap((h,i)=>[i,h]),"#ccc"],"fill-opacity":0.14}});
     map.addLayer({id:"blocks-line",type:"line",source:"blocks",paint:{"line-color":["match",["get","f"],...FOLD_COL.flatMap((h,i)=>[i,h]),"#ccc"],"line-width":1,"line-opacity":0.7}});
-    map.addSource("pts",{type:"geojson",data:{type:"FeatureCollection",features:P.map(p=>({type:"Feature",properties:{v:p},geometry:{type:"Point",coordinates:[p[0],p[1]]}}))}});
+    map.addSource("pts",{type:"geojson",data:g.pts});
     map.addLayer({id:"pts",type:"circle",source:"pts",paint:{"circle-radius":["interpolate",["linear"],["zoom"],8,2.2,13,5],"circle-stroke-width":0.6,"circle-stroke-color":"rgba(0,0,0,.45)"}});
     paint();
     map.on("click","pts",e=>{const v=JSON.parse(e.features[0].properties.v);
@@ -196,7 +225,8 @@ document.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{lang=b.datase
 document.querySelectorAll("[data-th]").forEach(b=>b.onclick=()=>{theme=b.dataset.th;store.set("emb-theme",theme);document.documentElement.setAttribute("data-theme",theme);render();});
 document.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{val=b.dataset.v;render();});
 document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{col=b.dataset.c;render();});
-Promise.all(["summary","points","blocks"].map(f=>fetch(`data/${f}.json`).then(r=>r.json()))).then(([s,p,b])=>{S=s;P=p;B=b;render();build();});
+document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>load(b.dataset.p));
+load("fr");
 render();
 </script>
 </body>

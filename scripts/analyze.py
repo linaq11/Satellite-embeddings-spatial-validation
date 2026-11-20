@@ -1,6 +1,6 @@
 """Apply the preregistered decision rules to data/results.csv and draw the figures.
 
-Writes data/summary.json and docs/fig_*.png. USE: python scripts/analyze.py
+Writes data/summary{tag}.json and docs/fig_*{tag}.png. USE: python scripts/analyze.py [--tag _fr]
 """
 import json
 import sys
@@ -31,7 +31,11 @@ def paired(r, scheme, model, size, fa, fb):
 
 
 def main() -> None:
-    r = pd.read_csv(ROOT / "data" / "results.csv", dtype={"size": str})
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tag", default="")
+    tag = ap.parse_args().tag
+    r = pd.read_csv(ROOT / "data" / f"results{tag}.csv", dtype={"size": str})
     out = {"means": {}, "H1": {}, "H2": {}, "sensitivity": {}}
     g = r.groupby(["scheme", "model", "features", "size"]).macro_f1.mean()
     out["means"] = {f"{s}|{m}|{f}|{z}": round(float(v), 4) for (s, m, f, z), v in g.items()}
@@ -70,7 +74,7 @@ def main() -> None:
                 d = paired(r, sch, "rf", z, "A", "B")
                 out["sensitivity"][f"{sch}|{z}"] = {"A_minus_B": round(float(d.mean()), 4),
                                                    "A": round(float(g[(sch, "rf", "A", z)]), 4), "B": round(float(g[(sch, "rf", "B", z)]), 4)}
-    (ROOT / "data" / "summary.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
+    (ROOT / "data" / f"summary{tag}.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
     print(json.dumps({k: out[k] for k in ("H1", "H2", "sensitivity")}, indent=1))
 
     # Figure 1: learning curves, random forest, random against spatial validation
@@ -87,7 +91,7 @@ def main() -> None:
     ax.set_xlabel("Training points per class")
     ax.set_ylabel("Macro-F1 (random forest)")
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=2, frameon=False, fontsize=8.5)
-    fig.savefig(docs / "fig_learning_curves.png", bbox_inches="tight", facecolor="white")
+    fig.savefig(docs / f"fig_learning_curves{tag}.png", bbox_inches="tight", facecolor="white")
     plt.close(fig)
 
     # Figure 2: inflation, random minus spatial with all training points
@@ -99,7 +103,7 @@ def main() -> None:
     ax.set_xticks(range(len(keys)), [f"{f}\n{'RF' if m == 'rf' else 'Logistic'}" for f, m in keys])
     ax.axhline(0, color="0.3", lw=0.8)
     ax.set_ylabel("Macro-F1, random minus spatial validation")
-    fig.savefig(docs / "fig_inflation.png", bbox_inches="tight", facecolor="white")
+    fig.savefig(docs / f"fig_inflation{tag}.png", bbox_inches="tight", facecolor="white")
     plt.close(fig)
 
 

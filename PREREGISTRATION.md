@@ -27,4 +27,14 @@ For crop-type mapping, do Google's AlphaEarth Foundations annual embeddings clas
 2. **H2, random validation inflates accuracy.** With all training points, random validation gives a higher macro-F1 than spatial validation for each feature set and model, by at least 0.02, with the 95% bootstrap interval of the difference excluding zero.
 3. **H3, exploratory.** The advantage of A over B shrinks as the training size grows. Reported as a curve, without a test.
 
+## Part 2, added on 2026-11-20, before any French label was downloaded
+
+After Part 1 was run, the dataset page showed that the AlphaEarth model behind these embeddings (v2.1) used the USDA Cropland Data Layer as a training target. Part 1 therefore tests the embeddings with labels they have seen. Part 2 repeats the same design with labels that are not among the AlphaEarth training sources (Sentinel-2, Landsat, Sentinel-1, PALSAR-2, ERA5-Land, GEDI, GRACE, Copernicus DEM, NLCD, CDL and English Wikipedia and GBIF text, per the paper's Table S1 and the dataset page).
+
+* **Labels.** France's Registre Parcellaire Graphique 2023 (farmers' declarations, IGN and ASP, Licence Ouverte 2.0), layer `RPG.2023:parcelles_graphiques` of the Géoplateforme WFS, field `code_cultu`.
+* **Area.** The Beauce, 1.2° E to 2.2° E and 48.0° N to 48.6° N. Projected work in RGF93 / Lambert-93 (EPSG:2154).
+* **Classes and sample.** The 8 `code_cultu` values with the largest total declared area in the box; parcels of 1 ha or more; one point per parcel, at a point guaranteed to lie inside it; 600 parcels per class drawn at random with seed 42.
+* **Everything else** (features for 2023, models, validation schemes, training sizes, draws, metric, H1, H2, H3 and their decision rules, with intervals resampling folds for H2) is the same as in Part 1.
+* **Added comparison.** The gap between AlphaEarth and Sentinel-2 in Part 2 is set beside the gap in Part 1, as description only.
+
 Every result is reported, including those that go against the hypotheses. Nothing in this design is changed after the first model is trained; any later change is listed as a deviation with its reason.

@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "Satellite Embeddings Under Spatial Validation"
-abstract: "A preregistered test of AlphaEarth satellite embeddings against Sentinel-2 composites for crop mapping in California's San Joaquin Valley, with random and spatial-block cross-validation."
+title: "Satellite Embeddings, Tested on Labels They Never Saw"
+abstract: "A preregistered test of AlphaEarth satellite embeddings against Sentinel-2 composites for crop mapping, in California with labels the embedding model saw in training and in France with independent labels, under random and spatial-block cross-validation."
 type: software
 authors:
   - family-names: "Quintero Fonseca"

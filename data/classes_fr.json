@@ -1,0 +1,76 @@
+{
+ "classes": [
+  {
+   "code": "BTH",
+   "name": "Blé tendre d'hiver",
+   "declared_ha": 122147.8,
+   "parcels": 11862
+  },
+  {
+   "code": "CZH",
+   "name": "Colza d'hiver",
+   "declared_ha": 60375.6,
+   "parcels": 6385
+  },
+  {
+   "code": "ORH",
+   "name": "Orge d'hiver",
+   "declared_ha": 42494.8,
+   "parcels": 4991
+  },
+  {
+   "code": "BDH",
+   "name": "Blé dur d'hiver",
+   "declared_ha": 34998.3,
+   "parcels": 3011
+  },
+  {
+   "code": "ORP",
+   "name": "Orge de printemps",
+   "declared_ha": 24308.7,
+   "parcels": 2861
+  },
+  {
+   "code": "MIS",
+   "name": "Maïs (hors maïs doux)",
+   "declared_ha": 23781.3,
+   "parcels": 2330
+  },
+  {
+   "code": "BTN",
+   "name": "Betterave",
+   "declared_ha": 15167.5,
+   "parcels": 1434
+  },
+  {
+   "code": "PTC",
+   "name": "Pomme de terre",
+   "declared_ha": 10929.5,
+   "parcels": 1186
+  }
+ ],
+ "next_classes": [
+  {
+   "code": "JAC",
+   "name": "Jachère (terre arable)",
+   "declared_ha": 6776.1
+  },
+  {
+   "code": "PPR",
+   "name": "Pois protéagineux de printemps (alimentation animale)",
+   "declared_ha": 4236.1
+  },
+  {
+   "code": "TRN",
+   "name": "Tournesol",
+   "declared_ha": 3884.3
+  },
+  {
+   "code": "OIG",
+   "name": "Oignon et échalote",
+   "declared_ha": 3473.0
+  }
+ ],
+ "parcels_in_box": 71157,
+ "parcels_1ha_or_more": 43946
+}
