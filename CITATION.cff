@@ -10,5 +10,5 @@ authors:
 version: 0.1.0
 date-released: 2026-11-20
 license: MIT
-repository-code: "https://github.com/linaq11/satellite-embeddings-spatial-cv"
+repository-code: "https://github.com/linaq11/Satellite-embeddings-spatial-validation"
 keywords: [satellite embeddings, AlphaEarth, foundation models, spatial cross-validation, crop mapping, Sentinel-2, Earth Engine]

@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "satellite-embeddings-spatial-cv"
+name = "satellite-embeddings-spatial-validation"
 version = "0.1.0"
 description = "AlphaEarth satellite embeddings against Sentinel-2 for crop mapping with seen and independent labels, under random and spatial-block cross-validation."
 readme = "README.md"

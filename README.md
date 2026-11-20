@@ -2,7 +2,7 @@
 
 Google's AlphaEarth Foundations embeddings are often reported to beat raw satellite bands by a wide margin when labels are scarce. This preregistered test checks that claim for crop mapping twice: in California, with labels the embedding model was trained on, and in France, with labels it never saw. With spatial cross-validation, the large advantage in California disappears in France.
 
-**Live dashboard: https://linaq11.github.io/satellite-embeddings-spatial-cv/**
+**Live dashboard: https://linaq11.github.io/Satellite-embeddings-spatial-validation/**
 
 ![Dashboard: French sample over the 20 km validation blocks, learning curves and inflation](docs/screenshot_dark_en.jpg)
 
