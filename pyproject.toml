@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "satellite-embeddings-spatial-cv"
+version = "0.1.0"
+description = "AlphaEarth satellite embeddings against Sentinel-2 for crop mapping, with random and spatial-block cross-validation."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Lina María Quintero Fonseca"}]
+requires-python = ">=3.10"
+dependencies = ["numpy", "pandas", "scikit-learn", "pyproj"]
+
+[project.optional-dependencies]
+build = ["earthengine-api", "matplotlib"]
+test = ["pytest>=7"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

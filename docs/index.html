@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embeddings Under Spatial Validation</title>
+<meta name="description" content="AlphaEarth satellite embeddings against Sentinel-2 for crop mapping in California's San Joaquin Valley, with random and spatial cross-validation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+:root{
+  --bg:#0a100e; --glass:rgba(12,21,18,.7); --glass-strong:rgba(10,18,16,.86); --line:rgba(206,232,220,.12);
+  --ink:#e8f1ec; --muted:#9bb2a8; --faint:#6d8379; --gold1:#f4dc9c; --gold2:#c99440;
+  --emb:#e0a23a; --s2:#3bb4c4; --both:#a7b4ad;
+  --chip:rgba(255,255,255,.04); --grid:rgba(206,232,220,.10); --shadow:0 18px 50px rgba(0,0,0,.38);
+  --on:rgba(224,162,58,.14); --on-line:rgba(224,162,58,.55); --attrib:rgba(8,14,12,.7);
+  --display:"Bricolage Grotesque","Manrope",system-ui,sans-serif; --body:"Manrope",system-ui,sans-serif;
+}
+:root[data-theme="light"]{
+  --bg:#d5eadd; --glass:rgba(224,242,231,.76); --glass-strong:rgba(218,239,226,.9); --line:rgba(22,72,46,.16);
+  --ink:#0f2619; --muted:#3a5a48; --faint:#5d7c6b; --gold1:#b98320; --gold2:#7a500f;
+  --emb:#b06f08; --s2:#11768a; --both:#4f5d55;
+  --chip:rgba(255,255,255,.45); --grid:rgba(15,38,25,.13); --shadow:0 18px 50px rgba(20,60,40,.2);
+  --on:rgba(176,111,8,.14); --on-line:rgba(176,111,8,.55); --attrib:rgba(224,242,231,.82);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45}
+#map{position:fixed;inset:0}
+.ui{position:fixed;inset:0;pointer-events:none;padding:16px;display:flex}
+.panel{pointer-events:auto;width:min(410px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--glass);
+  backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border:1px solid var(--line);
+  border-radius:18px;box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;gap:8px;flex-wrap:wrap}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--chip)}
+.toggle button{font:600 12.5px var(--body);color:var(--muted);background:none;border:0;border-radius:999px;padding:6px 12px;cursor:pointer}
+.toggle button[aria-pressed="true"]{background:var(--on);color:var(--gold1);box-shadow:inset 0 0 0 1px var(--on-line)}
+button:focus-visible{outline:2px solid var(--gold1);outline-offset:2px}
+h1{font:800 29px/1.04 var(--display);margin:0;text-wrap:balance}
+.sub{color:var(--gold2);font-weight:600;font-size:12.5px;margin-top:6px}
+.lede{color:var(--muted);margin:0}
+.label{font-weight:700;font-size:12.5px;color:var(--faint);margin:0 0 7px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 12.5px var(--body);color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--on);border-color:var(--on-line);color:var(--gold1)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.big div{border-top:1px solid var(--line);padding-top:8px}
+.big b{display:block;font:800 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.big span{color:var(--muted);font-size:12.5px}
+.card{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--glass-strong)}
+.card h2{font:700 16px var(--display);margin:0 0 4px}
+svg text{fill:var(--muted);font:11px var(--body)}
+table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;margin-top:6px}
+th,td{text-align:right;padding:4px 2px;border-bottom:1px solid var(--line)} th:first-child,td:first-child{text-align:left}
+th{color:var(--faint);font-weight:600}
+.verdict{margin:8px 0 0;font-weight:600}
+.credits{color:var(--faint);font-size:11px;margin:0} .credits a{color:var(--muted)}
+.maplibregl-ctrl-attrib{background:var(--attrib)!important;color:var(--muted)} .maplibregl-ctrl-attrib a{color:var(--muted)!important}
+@media (max-width:900px){ .ui{align-items:flex-end;padding:0} .panel{width:100%;max-height:58vh;border-radius:18px 18px 0 0} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="map" role="img" aria-label="Map of the sample points in the San Joaquin Valley"></div>
+<div class="ui"><aside class="panel">
+  <div class="top">
+    <div class="toggle" role="group" aria-label="Language"><button data-lang="en" aria-pressed="true">English</button><button data-lang="es" aria-pressed="false">Español</button></div>
+    <div class="toggle" role="group" aria-label="Theme"><button data-th="dark" aria-pressed="true" data-i18n="dark">Dark</button><button data-th="light" aria-pressed="false" data-i18n="light">Light</button></div>
+  </div>
+  <div><h1 data-i18n="title"></h1><div class="sub" data-i18n="sub"></div></div>
+  <p class="lede" id="lede"></p>
+  <div><p class="label" data-i18n="valL"></p>
+    <div class="chips"><button class="chip" data-v="block20" aria-pressed="true" data-i18n="spatial"></button><button class="chip" data-v="random" aria-pressed="false" data-i18n="random"></button></div></div>
+  <div><p class="label" data-i18n="colL"></p>
+    <div class="chips"><button class="chip" data-c="crop" aria-pressed="true" data-i18n="crop"></button><button class="chip" data-c="fold" aria-pressed="false" data-i18n="fold"></button></div></div>
+  <div class="legend" id="legend"></div>
+  <div class="big" id="big"></div>
+  <div class="card"><h2 data-i18n="curveT"></h2><p class="lede" style="font-size:12.5px" id="curveL"></p>
+    <svg id="curve" viewBox="0 0 340 230" width="100%" role="img" aria-labelledby="cvT"><title id="cvT">Learning curves</title></svg></div>
+  <div class="card"><h2 data-i18n="inflT"></h2><p class="lede" style="font-size:12.5px" data-i18n="inflL"></p>
+    <table id="infl"></table><p class="verdict" id="verdict"></p></div>
+  <p class="credits" id="credits"></p>
+</aside></div>
+<script>
+const T={
+ en:{dark:"Dark",light:"Light",title:"Do satellite embeddings survive spatial validation?",sub:"Crop mapping, San Joaquin Valley, California, 2023",
+  lede:"{n} labelled points from the USDA Cropland Data Layer, eight crops, classified with Google's AlphaEarth embeddings and with Sentinel-2 seasonal composites.",
+  valL:"Validation",spatial:"Spatial blocks, 20 km",random:"Random 5-fold",colL:"Colour points by",crop:"Crop",fold:"Test fold",
+  b1:"AlphaEarth, 10 labels per crop",b2:"Sentinel-2, 10 labels per crop",
+  curveT:"Accuracy against number of labels",curveL:"Macro-F1 of a random forest. Solid: {v}. Dashed: the other validation.",
+  xL:"Labels per crop",yL:"Macro-F1",emb:"AlphaEarth (64)",s2:"Sentinel-2 (40)",both:"Both (104)",
+  inflT:"How much random validation inflates",inflL:"Macro-F1 with random minus spatial validation, all labels, random forest, with a 95% interval over folds.",
+  feat:"Features",diff:"Inflation",ci:"95% interval",
+  verdict:"Embeddings lose less when the test area is new: with Sentinel-2 the gap is about three times larger.",
+  credits:'Labels: USDA NASS Cropland Data Layer 2023, confidence of 90 or more. Embeddings: Google AlphaEarth Foundations (Earth Engine). Imagery: Esri World Imagery. <a href="https://github.com/linaq11/satellite-embeddings-spatial-cv">Code, preregistration and results</a>, Lina María Quintero Fonseca.',
+  pop:"<b>{c}</b><br>Random fold {r}, spatial fold {s}"},
+ es:{dark:"Oscuro",light:"Claro",title:"¿Los embeddings satelitales resisten la validación espacial?",sub:"Mapeo de cultivos, valle de San Joaquín, California, 2023",
+  lede:"{n} puntos etiquetados con el Cropland Data Layer del USDA, ocho cultivos, clasificados con los embeddings AlphaEarth de Google y con compuestos estacionales de Sentinel-2.",
+  valL:"Validación",spatial:"Bloques espaciales, 20 km",random:"Aleatoria, 5 pliegues",colL:"Colorear puntos por",crop:"Cultivo",fold:"Pliegue de prueba",
+  b1:"AlphaEarth, 10 etiquetas por cultivo",b2:"Sentinel-2, 10 etiquetas por cultivo",
+  curveT:"Exactitud según el número de etiquetas",curveL:"Macro-F1 de un random forest. Continua: {v}. Punteada: la otra validación.",
+  xL:"Etiquetas por cultivo",yL:"Macro-F1",emb:"AlphaEarth (64)",s2:"Sentinel-2 (40)",both:"Ambos (104)",
+  inflT:"Cuánto infla la validación aleatoria",inflL:"Macro-F1 con validación aleatoria menos espacial, todas las etiquetas, random forest, con intervalo del 95 % sobre pliegues.",
+  feat:"Variables",diff:"Inflación",ci:"Intervalo 95 %",
+  verdict:"Los embeddings pierden menos cuando el área de prueba es nueva: con Sentinel-2 la brecha es unas tres veces mayor.",
+  credits:'Etiquetas: Cropland Data Layer 2023 del USDA NASS, confianza de 90 o más. Embeddings: AlphaEarth Foundations de Google (Earth Engine). Imagen: Esri World Imagery. <a href="https://github.com/linaq11/satellite-embeddings-spatial-cv">Código, preregistro y resultados</a>, Lina María Quintero Fonseca.',
+  pop:"<b>{c}</b><br>Pliegue aleatorio {r}, pliegue espacial {s}"}
+};
+const ES_CROPS={"Almonds":"Almendros","Pistachios":"Pistachos","Grapes":"Uva","Fallow/Idle Cropland":"Barbecho","Citrus":"Cítricos","Tomatoes":"Tomate","Alfalfa":"Alfalfa","Cotton":"Algodón"};
+const CROP_COL=["#d9a06a","#a8c85a","#9a6bb0","#c9b79c","#f2a33a","#e0584c","#3fae6a","#6fb7d6"];
+const FOLD_COL=["#e0a23a","#3bb4c4","#e0584c","#9a86d0","#5aae61"];
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let lang=store.get("emb-lang")||"en", theme=store.get("emb-theme")||"dark", val="block20", col="crop", S, P, B, map;
+document.documentElement.setAttribute("data-theme",theme);
+const t=(k,p={})=>T[lang][k].replace(/\{(\w+)\}/g,(_,x)=>p[x]??"");
+const loc=()=>lang==="es"?"es-CO":"en-US";
+const num=(v,d=2)=>new Intl.NumberFormat(loc(),{minimumFractionDigits:d,maximumFractionDigits:d}).format(v).replace("-","−");
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const crop=i=>lang==="es"?(ES_CROPS[S.classes[i]]||S.classes[i]):S.classes[i];
+
+function render(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll("[data-i18n]").forEach(e=>e.textContent=t(e.dataset.i18n));
+  document.querySelectorAll("[data-lang]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===lang));
+  document.querySelectorAll("[data-th]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.th===theme));
+  document.querySelectorAll("[data-v]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===val));
+  document.querySelectorAll("[data-c]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c===col));
+  if(!S) return;
+  document.getElementById("lede").textContent=t("lede",{n:S.n_points.toLocaleString(loc())});
+  const c=S.curves;
+  document.getElementById("big").innerHTML=
+    `<div><b style="color:var(--emb)">${num(c[`${val}|rf|A`]["10"][0])}</b><span>${t("b1")}</span></div>`+
+    `<div><b style="color:var(--s2)">${num(c[`${val}|rf|B`]["10"][0])}</b><span>${t("b2")}</span></div>`;
+  document.getElementById("legend").innerHTML = col==="crop"
+    ? S.classes.map((_,i)=>`<span><i style="background:${CROP_COL[i]}"></i>${crop(i)}</span>`).join("")
+    : FOLD_COL.map((h,i)=>`<span><i style="background:${h}"></i>${i+1}</span>`).join("");
+  document.getElementById("curveL").textContent=t("curveL",{v:t(val==="block20"?"spatial":"random").toLowerCase()});
+  curve();
+  const H=S.H2;
+  document.getElementById("infl").innerHTML=`<tr><th>${t("feat")}</th><th>${t("diff")}</th><th>${t("ci")}</th></tr>`+
+    [["A","emb"],["B","s2"],["C","both"]].map(([f,k])=>{const h=H[`${f}|rf`];return `<tr><td>${t(k)}</td><td>+${num(h.mean_diff,3)}</td><td>${num(h.ci95_folds[0],3)} – ${num(h.ci95_folds[1],3)}</td></tr>`}).join("");
+  document.getElementById("verdict").textContent=t("verdict");
+  document.getElementById("credits").innerHTML=t("credits");
+  paint();
+}
+function curve(){
+  const W=340,H=230,m={l:40,r:12,t:24,b:34},sizes=["10","25","50","100","200","all"],lo=0.65,hi=1.0;
+  const X=i=>m.l+i/(sizes.length-1)*(W-m.l-m.r), Y=v=>H-m.b-(v-lo)/(hi-lo)*(H-m.t-m.b);
+  let s=`<title id="cvT">${t("curveT")}</title>`;
+  for(const v of [0.7,0.8,0.9,1.0]) s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${m.l-6}" y="${Y(v)+4}" text-anchor="end">${num(v,1)}</text>`;
+  sizes.forEach((z,i)=>s+=`<text x="${X(i)}" y="${H-m.b+15}" text-anchor="middle">${z==="all"?(lang==="es"?"todas":"all"):z}</text>`);
+  const other=val==="block20"?"random":"block20";
+  [["C","--both","both",2],["B","--s2","s2",1],["A","--emb","emb",0]].forEach(([f,v,k,j])=>{
+    for(const [sch,dash,w] of [[other,"4 4",1.4],[val,"",2.4]]){
+      const pts=sizes.map((z,i)=>`${X(i)},${Y(S.curves[`${sch}|rf|${f}`][z][0])}`).join(" ");
+      s+=`<polyline points="${pts}" fill="none" stroke="var(${v})" stroke-width="${w}" stroke-dasharray="${dash}" opacity="${dash?0.6:1}"/>`;
+    }
+    s+=`<line x1="${m.l+4+j*100}" x2="${m.l+18+j*100}" y1="10" y2="10" stroke="var(${v})" stroke-width="2.4"/><text x="${m.l+22+j*100}" y="14">${t(k).replace(/ \(\d+\)/,"")}</text>`;
+  });
+  s+=`<text x="${(m.l+W-m.r)/2}" y="${H-4}" text-anchor="middle">${t("xL")}</text><text transform="translate(11 ${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle">${t("yL")}</text>`;
+  document.getElementById("curve").innerHTML=s;
+}
+function paint(){
+  if(!map||!map.getLayer("pts")) return;
+  const fi=val==="block20"?4:3;
+  const color = col==="crop" ? ["match",["at",2,["get","v"]],...S.classes.flatMap((_,i)=>[i,CROP_COL[i]]),"#ccc"]
+                             : ["match",["at",fi,["get","v"]],...FOLD_COL.flatMap((h,i)=>[i,h]),"#ccc"];
+  map.setPaintProperty("pts","circle-color",color);
+  map.setLayoutProperty("blocks","visibility",val==="block20"?"visible":"none");
+  map.setLayoutProperty("blocks-line","visibility",val==="block20"?"visible":"none");
+}
+function build(){
+  const lons=P.map(p=>p[0]), lats=P.map(p=>p[1]);
+  map=new maplibregl.Map({container:"map",attributionControl:{compact:true},
+    style:{version:8,sources:{esri:{type:"raster",tileSize:256,maxzoom:19,tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],attribution:"Imagery: Esri, Maxar, Earthstar Geographics"}},layers:[{id:"esri",type:"raster",source:"esri",paint:{"raster-saturation":-0.35,"raster-brightness-max":0.85}}]},
+    bounds:[[Math.min(...lons),Math.min(...lats)],[Math.max(...lons),Math.max(...lats)]],
+    fitBoundsOptions:{padding:{left:innerWidth>900?440:20,right:30,top:30,bottom:innerWidth>900?30:innerHeight*.55}}});
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-right");
+  map.once("style.load",()=>{
+    map.addSource("blocks",{type:"geojson",data:{type:"FeatureCollection",features:B.map(b=>({type:"Feature",properties:{f:b.fold},geometry:{type:"Polygon",coordinates:[b.ring]}}))}});
+    map.addLayer({id:"blocks",type:"fill",source:"blocks",paint:{"fill-color":["match",["get","f"],...FOLD_COL.flatMap((h,i)=>[i,h]),"#ccc"],"fill-opacity":0.14}});
+    map.addLayer({id:"blocks-line",type:"line",source:"blocks",paint:{"line-color":["match",["get","f"],...FOLD_COL.flatMap((h,i)=>[i,h]),"#ccc"],"line-width":1,"line-opacity":0.7}});
+    map.addSource("pts",{type:"geojson",data:{type:"FeatureCollection",features:P.map(p=>({type:"Feature",properties:{v:p},geometry:{type:"Point",coordinates:[p[0],p[1]]}}))}});
+    map.addLayer({id:"pts",type:"circle",source:"pts",paint:{"circle-radius":["interpolate",["linear"],["zoom"],8,2.2,13,5],"circle-stroke-width":0.6,"circle-stroke-color":"rgba(0,0,0,.45)"}});
+    paint();
+    map.on("click","pts",e=>{const v=JSON.parse(e.features[0].properties.v);
+      new maplibregl.Popup({closeButton:false}).setLngLat(e.lngLat).setHTML(t("pop",{c:crop(v[2]),r:v[3]+1,s:v[4]+1})).addTo(map);});
+    map.on("mouseenter","pts",()=>map.getCanvas().style.cursor="pointer");
+    map.on("mouseleave","pts",()=>map.getCanvas().style.cursor="");
+  });
+}
+document.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{lang=b.dataset.lang;store.set("emb-lang",lang);render();});
+document.querySelectorAll("[data-th]").forEach(b=>b.onclick=()=>{theme=b.dataset.th;store.set("emb-theme",theme);document.documentElement.setAttribute("data-theme",theme);render();});
+document.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{val=b.dataset.v;render();});
+document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{col=b.dataset.c;render();});
+Promise.all(["summary","points","blocks"].map(f=>fetch(`data/${f}.json`).then(r=>r.json()))).then(([s,p,b])=>{S=s;P=p;B=b;render();build();});
+render();
+</script>
+</body>
+</html>

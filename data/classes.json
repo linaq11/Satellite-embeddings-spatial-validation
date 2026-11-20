@@ -1,0 +1,66 @@
+{
+ "classes": [
+  {
+   "code": 75,
+   "name": "Almonds",
+   "cells": 1773866
+  },
+  {
+   "code": 204,
+   "name": "Pistachios",
+   "cells": 1155868
+  },
+  {
+   "code": 69,
+   "name": "Grapes",
+   "cells": 688493
+  },
+  {
+   "code": 61,
+   "name": "Fallow/Idle Cropland",
+   "cells": 515157
+  },
+  {
+   "code": 72,
+   "name": "Citrus",
+   "cells": 403226
+  },
+  {
+   "code": 54,
+   "name": "Tomatoes",
+   "cells": 243481
+  },
+  {
+   "code": 36,
+   "name": "Alfalfa",
+   "cells": 226161
+  },
+  {
+   "code": 2,
+   "name": "Cotton",
+   "cells": 224719
+  }
+ ],
+ "next_classes": [
+  {
+   "code": 76,
+   "name": "Walnuts",
+   "cells": 221300
+  },
+  {
+   "code": 24,
+   "name": "Winter Wheat",
+   "cells": 174530
+  },
+  {
+   "code": 1,
+   "name": "Corn",
+   "cells": 110088
+  },
+  {
+   "code": 225,
+   "name": "Dbl Crop WinWht/Corn",
+   "cells": 81909
+  }
+ ]
+}

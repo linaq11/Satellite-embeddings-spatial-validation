@@ -1,0 +1,208 @@
+{
+ "means": {
+  "block10|rf|A|25": 0.9441,
+  "block10|rf|A|all": 0.9548,
+  "block10|rf|B|25": 0.7895,
+  "block10|rf|B|all": 0.8761,
+  "block20|logit|A|10": 0.9309,
+  "block20|logit|A|100": 0.9363,
+  "block20|logit|A|200": 0.9334,
+  "block20|logit|A|25": 0.9366,
+  "block20|logit|A|50": 0.9367,
+  "block20|logit|A|all": 0.9333,
+  "block20|logit|B|10": 0.7481,
+  "block20|logit|B|100": 0.8513,
+  "block20|logit|B|200": 0.8678,
+  "block20|logit|B|25": 0.8099,
+  "block20|logit|B|50": 0.8359,
+  "block20|logit|B|all": 0.8745,
+  "block20|logit|C|10": 0.9232,
+  "block20|logit|C|100": 0.9358,
+  "block20|logit|C|200": 0.9345,
+  "block20|logit|C|25": 0.9352,
+  "block20|logit|C|50": 0.9343,
+  "block20|logit|C|all": 0.9339,
+  "block20|rf|A|10": 0.9282,
+  "block20|rf|A|100": 0.9434,
+  "block20|rf|A|200": 0.9478,
+  "block20|rf|A|25": 0.9382,
+  "block20|rf|A|50": 0.9397,
+  "block20|rf|A|all": 0.9486,
+  "block20|rf|B|10": 0.6771,
+  "block20|rf|B|100": 0.8123,
+  "block20|rf|B|200": 0.8331,
+  "block20|rf|B|25": 0.7508,
+  "block20|rf|B|50": 0.7877,
+  "block20|rf|B|all": 0.8523,
+  "block20|rf|C|10": 0.9238,
+  "block20|rf|C|100": 0.9454,
+  "block20|rf|C|200": 0.9486,
+  "block20|rf|C|25": 0.939,
+  "block20|rf|C|50": 0.9412,
+  "block20|rf|C|all": 0.9503,
+  "block40|rf|A|25": 0.9098,
+  "block40|rf|A|all": 0.9245,
+  "block40|rf|B|25": 0.7004,
+  "block40|rf|B|all": 0.8013,
+  "random|logit|A|10": 0.9401,
+  "random|logit|A|100": 0.9517,
+  "random|logit|A|200": 0.9524,
+  "random|logit|A|25": 0.9474,
+  "random|logit|A|50": 0.9496,
+  "random|logit|A|all": 0.9541,
+  "random|logit|B|10": 0.8008,
+  "random|logit|B|100": 0.8898,
+  "random|logit|B|200": 0.9023,
+  "random|logit|B|25": 0.8486,
+  "random|logit|B|50": 0.8762,
+  "random|logit|B|all": 0.9098,
+  "random|logit|C|10": 0.9363,
+  "random|logit|C|100": 0.95,
+  "random|logit|C|200": 0.9522,
+  "random|logit|C|25": 0.9463,
+  "random|logit|C|50": 0.9492,
+  "random|logit|C|all": 0.9544,
+  "random|rf|A|10": 0.9402,
+  "random|rf|A|100": 0.9538,
+  "random|rf|A|200": 0.9575,
+  "random|rf|A|25": 0.9478,
+  "random|rf|A|50": 0.9511,
+  "random|rf|A|all": 0.9632,
+  "random|rf|B|10": 0.7366,
+  "random|rf|B|100": 0.8602,
+  "random|rf|B|200": 0.8812,
+  "random|rf|B|25": 0.8044,
+  "random|rf|B|50": 0.8364,
+  "random|rf|B|all": 0.9026,
+  "random|rf|C|10": 0.9377,
+  "random|rf|C|100": 0.9542,
+  "random|rf|C|200": 0.9579,
+  "random|rf|C|25": 0.9477,
+  "random|rf|C|50": 0.9508,
+  "random|rf|C|all": 0.9643
+ },
+ "H1": {
+  "10": {
+   "mean_diff": 0.2511,
+   "ci95": [
+    0.2382,
+    0.2641
+   ]
+  },
+  "25": {
+   "mean_diff": 0.1874,
+   "ci95": [
+    0.1796,
+    0.195
+   ]
+  },
+  "holds": true
+ },
+ "H2": {
+  "A|rf": {
+   "mean_diff": 0.0146,
+   "ci95": [
+    0.0134,
+    0.0157
+   ],
+   "holds": false,
+   "ci95_folds": [
+    -0.0024,
+    0.0322
+   ]
+  },
+  "A|logit": {
+   "mean_diff": 0.0209,
+   "ci95": [
+    0.0209,
+    0.0209
+   ],
+   "holds": true,
+   "ci95_folds": [
+    0.0037,
+    0.0448
+   ]
+  },
+  "B|rf": {
+   "mean_diff": 0.0503,
+   "ci95": [
+    0.0494,
+    0.0514
+   ],
+   "holds": true,
+   "ci95_folds": [
+    0.0222,
+    0.0769
+   ]
+  },
+  "B|logit": {
+   "mean_diff": 0.0353,
+   "ci95": [
+    0.0353,
+    0.0353
+   ],
+   "holds": true,
+   "ci95_folds": [
+    0.0126,
+    0.0598
+   ]
+  },
+  "C|rf": {
+   "mean_diff": 0.014,
+   "ci95": [
+    0.0134,
+    0.0147
+   ],
+   "holds": false,
+   "ci95_folds": [
+    -0.0023,
+    0.0308
+   ]
+  },
+  "C|logit": {
+   "mean_diff": 0.0205,
+   "ci95": [
+    0.0205,
+    0.0205
+   ],
+   "holds": true,
+   "ci95_folds": [
+    -0.0006,
+    0.0439
+   ]
+  },
+  "holds_for_all": false
+ },
+ "sensitivity": {
+  "block10|25": {
+   "A_minus_B": 0.1546,
+   "A": 0.9441,
+   "B": 0.7895
+  },
+  "block10|all": {
+   "A_minus_B": 0.0787,
+   "A": 0.9548,
+   "B": 0.8761
+  },
+  "block20|25": {
+   "A_minus_B": 0.1874,
+   "A": 0.9382,
+   "B": 0.7508
+  },
+  "block20|all": {
+   "A_minus_B": 0.0963,
+   "A": 0.9486,
+   "B": 0.8523
+  },
+  "block40|25": {
+   "A_minus_B": 0.2094,
+   "A": 0.9098,
+   "B": 0.7004
+  },
+  "block40|all": {
+   "A_minus_B": 0.1232,
+   "A": 0.9245,
+   "B": 0.8013
+  }
+ }
+}
